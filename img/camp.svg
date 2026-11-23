@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice"><rect width="800" height="500" fill="#FFE600"/><g fill="#EE5500"><path d="M600 170 L1600 170 L1597 242Z"/><path d="M600 170 L1566 429 L1545 498Z"/><path d="M600 170 L1466 670 L1428 731Z"/><path d="M600 170 L1307 877 L1254 926Z"/><path d="M600 170 L1100 1036 L1036 1070Z"/><path d="M600 170 L859 1136 L789 1152Z"/><path d="M600 170 L600 1170 L528 1167Z"/><path d="M600 170 L341 1136 L272 1115Z"/><path d="M600 170 L100 1036 L39 998Z"/><path d="M600 170 L-107 877 L-156 824Z"/><path d="M600 170 L-266 670 L-300 606Z"/><path d="M600 170 L-366 429 L-382 359Z"/><path d="M600 170 L-400 170 L-397 98Z"/><path d="M600 170 L-366 -89 L-345 -158Z"/><path d="M600 170 L-266 -330 L-228 -391Z"/><path d="M600 170 L-107 -537 L-54 -586Z"/><path d="M600 170 L100 -696 L164 -730Z"/><path d="M600 170 L341 -796 L411 -812Z"/><path d="M600 170 L600 -830 L672 -827Z"/><path d="M600 170 L859 -796 L928 -775Z"/><path d="M600 170 L1100 -696 L1161 -658Z"/><path d="M600 170 L1307 -537 L1356 -484Z"/><path d="M600 170 L1466 -330 L1500 -266Z"/><path d="M600 170 L1566 -89 L1582 -19Z"/></g>
+<circle cx="600" cy="170" r="64" fill="#fff" stroke="#121212" stroke-width="8"/>
+<path d="M-20 380 L170 190 L290 310 L430 150 L660 380Z" fill="#121212"/>
+<path d="M0 390 Q400 330 800 390 L800 500 L0 500Z" fill="#3fae49"/>
+<path d="M150 450 L290 250 L430 450Z" fill="#EE5500" stroke="#121212" stroke-width="8" stroke-linejoin="round"/>
+<path d="M290 250 L262 450 L318 450Z" fill="#121212"/>
+<g fill="#121212"><rect x="500" y="370" width="170" height="44" rx="12"/><circle cx="535" cy="418" r="18"/><circle cx="635" cy="418" r="18"/><rect x="530" y="342" width="100" height="36" rx="8"/></g>
+<rect x="430" y="250" width="340" height="70" fill="#121212"/><text x="448" y="302" font-family="Dela Gothic One, sans-serif" font-size="42" fill="#FFE600">オートキャンプ</text>
+</svg>

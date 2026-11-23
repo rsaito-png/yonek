@@ -1,0 +1,13 @@
+{
+  "name": "よんエク",
+  "name_en": "Yokkaichi Express",
+  "base_url": "https://rsaito-png.github.io/yonek/",
+  "description": "四日市のニュースを、夕刊みたいな勢いで。よんエク（四日市エクスプレス）",
+  "categories": {
+    "市政・議会": "shisei",
+    "まち・観光": "machi",
+    "港・コンビナート": "minato",
+    "福祉・子育て": "fukushi",
+    "くらし": "kurashi"
+  }
+}
