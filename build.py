@@ -104,7 +104,10 @@ def credits_footer(items):
     return "／".join(out)
 
 def head(title, desc, pre, css, og_img=None, url=""):
-    og = f'<meta property="og:image" content="{E(SITE["base_url"] + "img/" + og_img)}">' if og_img else ""
+    og = (f'<meta property="og:image" content="{E(SITE["base_url"])}assets/og-image.png">\n'
+          '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
+          f'<meta property="og:image:alt" content="よんエク（四日市エクスプレス）のロゴ">\n'
+          f'<meta name="twitter:image" content="{E(SITE["base_url"])}assets/og-image.png">')
     return f'''<!doctype html>
 <html lang="ja">
 <head>
@@ -119,7 +122,11 @@ def head(title, desc, pre, css, og_img=None, url=""):
 <meta property="og:site_name" content="よんエク（Yokkaichi Express）">
 {og}
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="{pre}assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="{pre}assets/favicon.ico" sizes="any">
+<link rel="icon" href="{pre}assets/logo-mark.svg" type="image/svg+xml">
+<link rel="icon" href="{pre}assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="{pre}assets/logo-mark-180.png">
+<meta name="theme-color" content="#EE5500">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
@@ -158,7 +165,7 @@ def footer(pre, credit_items):
     cr = credits_footer(credit_items)
     cr = f"<p>写真：{E(cr)}（いずれもWikimedia Commonsより）。イラスト・グラフィックはよんエク編集部のオリジナル。</p>" if cr else "<p>イラスト・グラフィックはよんエク編集部のオリジナル。</p>"
     return f'''<footer><div class="wrap">
-  <span class="f-logo">よんエク</span>
+  <a class="f-mark" href="{pre}index.html" aria-label="よんエク トップへ"><img src="{pre}assets/logo-mark.svg" alt="よんエク" width="88" height="88"></a>
   <div>
     <p><strong>運営：よんエク編集部</strong>　四日市エクスプレス（Yokkaichi Express）</p>
     {cr}

@@ -233,3 +233,7 @@ svg[role=img]{display:block;width:100%;height:100%}
   .second h3{font-size:var(--ssm,44px)}
   .lead .cap{top:auto;bottom:6px;left:6px;right:auto;max-width:calc(100% - 150px);white-space:normal;font-size:10px}
 }
+
+footer .f-mark{display:block;width:88px;height:88px;align-self:start;border:3px solid #fff;box-shadow:5px 5px 0 var(--aka)}
+footer .f-mark img{width:100%;height:100%}
+@media (max-width:640px){footer .f-mark{width:64px;height:64px}}
