@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice"><rect width="800" height="500" fill="#FFE600"/><g fill="#EE5500"><path d="M400 250 L1400 250 L1397 322Z"/><path d="M400 250 L1366 509 L1345 578Z"/><path d="M400 250 L1266 750 L1228 811Z"/><path d="M400 250 L1107 957 L1054 1006Z"/><path d="M400 250 L900 1116 L836 1150Z"/><path d="M400 250 L659 1216 L589 1232Z"/><path d="M400 250 L400 1250 L328 1247Z"/><path d="M400 250 L141 1216 L72 1195Z"/><path d="M400 250 L-100 1116 L-161 1078Z"/><path d="M400 250 L-307 957 L-356 904Z"/><path d="M400 250 L-466 750 L-500 686Z"/><path d="M400 250 L-566 509 L-582 439Z"/><path d="M400 250 L-600 250 L-597 178Z"/><path d="M400 250 L-566 -9 L-545 -78Z"/><path d="M400 250 L-466 -250 L-428 -311Z"/><path d="M400 250 L-307 -457 L-254 -506Z"/><path d="M400 250 L-100 -616 L-36 -650Z"/><path d="M400 250 L141 -716 L211 -732Z"/><path d="M400 250 L400 -750 L472 -747Z"/><path d="M400 250 L659 -716 L728 -695Z"/><path d="M400 250 L900 -616 L961 -578Z"/><path d="M400 250 L1107 -457 L1156 -404Z"/><path d="M400 250 L1266 -250 L1300 -186Z"/><path d="M400 250 L1366 -9 L1382 61Z"/></g>
+<!-- baseball -->
+<circle cx="200" cy="250" r="110" fill="#fff" stroke="#121212" stroke-width="10"/>
+<path d="M125 180 Q200 230 275 180" fill="none" stroke="#EE5500" stroke-width="6"/>
+<path d="M125 320 Q200 270 275 320" fill="none" stroke="#EE5500" stroke-width="6"/>
+<!-- volleyball -->
+<circle cx="620" cy="230" r="120" fill="#fff" stroke="#121212" stroke-width="10"/>
+<path d="M500 230 Q620 80 740 230" fill="none" stroke="#121212" stroke-width="8"/>
+<path d="M500 230 Q620 380 740 230" fill="none" stroke="#121212" stroke-width="8"/>
+<path d="M620 110 Q540 230 620 350" fill="none" stroke="#121212" stroke-width="8"/>
+<path d="M620 110 Q700 230 620 350" fill="none" stroke="#121212" stroke-width="8"/>
+<!-- labels -->
+<rect x="80" y="390" width="240" height="58" fill="#121212"/><text x="118" y="434" font-family="Dela Gothic One, sans-serif" font-size="36" fill="#FFE600">二軍は断念</text>
+<rect x="480" y="390" width="280" height="58" fill="#121212"/><text x="508" y="434" font-family="Dela Gothic One, sans-serif" font-size="36" fill="#FFE600">SVGで開幕</text>
+</svg>
