@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice"><rect width="800" height="500" fill="#FFE600"/><g fill="#EE5500"><path d="M200 300 L1200 300 L1197 372Z"/><path d="M200 300 L1166 559 L1145 628Z"/><path d="M200 300 L1066 800 L1028 861Z"/><path d="M200 300 L907 1007 L854 1056Z"/><path d="M200 300 L700 1166 L636 1200Z"/><path d="M200 300 L459 1266 L389 1282Z"/><path d="M200 300 L200 1300 L128 1297Z"/><path d="M200 300 L-59 1266 L-128 1245Z"/><path d="M200 300 L-300 1166 L-361 1128Z"/><path d="M200 300 L-507 1007 L-556 954Z"/><path d="M200 300 L-666 800 L-700 736Z"/><path d="M200 300 L-766 559 L-782 489Z"/><path d="M200 300 L-800 300 L-797 228Z"/><path d="M200 300 L-766 41 L-745 -28Z"/><path d="M200 300 L-666 -200 L-628 -261Z"/><path d="M200 300 L-507 -407 L-454 -456Z"/><path d="M200 300 L-300 -566 L-236 -600Z"/><path d="M200 300 L-59 -666 L11 -682Z"/><path d="M200 300 L200 -700 L272 -697Z"/><path d="M200 300 L459 -666 L528 -645Z"/><path d="M200 300 L700 -566 L761 -528Z"/><path d="M200 300 L907 -407 L956 -354Z"/><path d="M200 300 L1066 -200 L1100 -136Z"/><path d="M200 300 L1166 41 L1182 111Z"/></g>
+<!-- rain + parking entrance -->
+<g fill="#121212">
+  <ellipse cx="560" cy="90" rx="90" ry="40"/>
+  <ellipse cx="640" cy="80" rx="80" ry="36"/>
+  <ellipse cx="720" cy="95" rx="70" ry="32"/>
+</g>
+<g stroke="#121212" stroke-width="10" stroke-linecap="round">
+  <line x1="520" y1="140" x2="500" y2="200"/>
+  <line x1="560" y1="130" x2="545" y2="210"/>
+  <line x1="600" y1="125" x2="590" y2="205"/>
+  <line x1="640" y1="128" x2="655" y2="215"/>
+  <line x1="680" y1="135" x2="700" y2="210"/>
+  <line x1="720" y1="140" x2="745" y2="205"/>
+  <line x1="760" y1="145" x2="780" y2="200"/>
+</g>
+<rect x="500" y="280" width="260" height="160" fill="#121212"/>
+<path d="M520 280 Q630 200 760 280" fill="#121212"/>
+<rect x="560" y="320" width="140" height="120" fill="#FFE600"/>
+<text x="590" y="395" font-family="Dela Gothic One, sans-serif" font-size="36" fill="#121212">P</text>
+<rect x="36" y="130" width="250" height="62" fill="#121212"/><text x="50" y="178" font-family="Dela Gothic One, sans-serif" font-size="40" fill="#FFE600">1時間</text>
+<text x="36" y="310" font-family="Dela Gothic One, sans-serif" font-size="72" fill="#121212">123.5ミリ</text>
+</svg>
