@@ -110,8 +110,6 @@ footer strong{color:var(--ki)}
 .src ul{list-style:none}
 .src li{padding:8px 0;border-top:2px solid #fff;font-weight:700;font-size:15px}
 .src li a{color:var(--ai);text-decoration:underline;text-decoration-thickness:2px}
-.fix{margin-top:18px;font-size:14px;color:#333}
-.fix a{font-weight:700;text-decoration:underline}
 /* サイド */
 .aside{display:flex;flex-direction:column;gap:20px}
 .aside .stick{position:sticky;top:20px;display:flex;flex-direction:column;gap:20px}
@@ -204,3 +202,6 @@ svg[role=img]{display:block;width:100%;height:100%}
 footer .f-mark{display:block;width:88px;height:88px;align-self:start;border:3px solid #fff;box-shadow:5px 5px 0 var(--aka)}
 footer .f-mark img{width:100%;height:100%}
 @media (max-width:640px){footer .f-mark{width:64px;height:64px}}
+.fix{margin-top:24px;border-top:4px solid var(--sumi);padding-top:12px}
+.fix ul{list-style:none}
+.fix li{font-size:15px;font-weight:700;padding:4px 0}

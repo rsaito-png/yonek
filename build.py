@@ -274,6 +274,21 @@ def build_home():
     s += footer(pre, arts) + "</body>\n</html>\n"
     (OUT / "index.html").write_text(s, encoding="utf-8")
 
+def corrections_html(a):
+    items = a.get("corrections") or []
+    if isinstance(items, str):
+        items = [items] if items else []
+    lis = []
+    for it in items:
+        m = re.match(r"^(\d{4})-(\d{2})-(\d{2})\s+(.+)$", it.strip())
+        if not m:
+            raise SystemExit(f"{a['slug']}: corrections は「YYYY-MM-DD 内容」の形で書いてください: {it}")
+        y, mo, d, body = m.groups()
+        lis.append(f'<li>訂正：{int(y)}年{int(mo)}月{int(d)}日　{E(body)}</li>')
+    if not lis:
+        return ""
+    return '      <section class="fix" aria-label="訂正"><ul>' + "".join(lis) + "</ul></section>\n"
+
 # ---------- 記事 ----------
 def build_article(a):
     pre = "../"
@@ -329,8 +344,7 @@ def build_article(a):
     {easy}
     <div class="text">
 {md(a["body"])}
-      <p class="fix">まちがいを見つけて直したときは、この下に日付と内容を書きます。</p>
-    </div>
+{corrections_html(a)}    </div>
   </div>
 
   <aside class="aside">
