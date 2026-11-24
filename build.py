@@ -168,6 +168,7 @@ def mast(pre, on=""):
     <span class="lt"><b>よんエク</b><i>YOKKAICHI EXPRESS</i></span><span class="yu">夕刊</span>
   </a>
   <nav aria-label="カテゴリ">{"".join(nav)}</nav>
+  <div class="tip"><a href="{pre}teikyo.html">情報を送る</a></div>
 </div></header>
 '''
 
@@ -187,6 +188,7 @@ def footer(pre, credit_items):
   <a class="f-mark" href="{pre}index.html" aria-label="よんエク トップへ"><img src="{pre}assets/logo-mark.svg" alt="よんエク" width="88" height="88"></a>
   <div>
     <p><strong>運営：よんエク編集部</strong>　四日市エクスプレス（Yokkaichi Express）</p>
+    <p><a href="{pre}teikyo.html">情報を送る</a></p>
     {cr}
   </div>
 </div></footer>
@@ -288,6 +290,7 @@ def build_home():
     s += '''<section class="neta"><div class="wrap">
   <h2 class="h">見た！聞いた！<br><span>四日市のネタ、記事にします</span></h2>
   <p>工事の囲い、新しくできた店、地域のイベント。四日市で起きていることを、夕刊みたいな勢いで届けます。</p>
+  <div class="btns"><a class="line" href="teikyo.html">情報を送る</a></div>
 </div></section>
 '''
     s += footer(pre, arts) + "</body>\n</html>\n"
@@ -395,6 +398,145 @@ document.querySelectorAll('.copy').forEach(c=>c.addEventListener('click',()=>{na
     (OUT / a["url"]).parent.mkdir(parents=True, exist_ok=True)
     (OUT / a["url"]).write_text(s, encoding="utf-8")
 
+def build_teikyo():
+    pre = ""
+    api = SITE.get("teikyo_api", "")
+    sitekey = SITE.get("turnstile_sitekey", "")
+    desc = "四日市で見たこと、聞いたことを、よんエク編集部に送れます。送られた内容がそのまま記事になることはありません。"
+    s = head("情報を送る｜よんエク", desc, pre, "home.css", url="teikyo.html")
+    s += mast(pre, "teikyo") + ticker(pre, by_date)
+    s += f"""<main class="wrap teikyo" id="main">
+  <header class="teikyo-h">
+    <p class="crumb"><a href="index.html">一面</a>　＞　情報を送る</p>
+    <h1 class="h">情報を<span>送る</span></h1>
+    <p class="lead">工事の囲い、新しくできた店、地域のイベント。四日市で見たこと・聞いたことを教えてください。編集部が確認してから記事にします。送られた内容がそのまま載ることはありません。</p>
+  </header>
+  <form id="teikyo-form" novalidate>
+    <div class="hp" aria-hidden="true">
+      <label>ウェブサイト<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <p class="field">
+      <label for="body">なにがあったか <em>必須</em></label>
+      <textarea id="body" name="body" required minlength="8" maxlength="4000" rows="8" placeholder="いつもの景色と違うところ、見かけたこと、気になっていることを、わかる範囲で書いてください。"></textarea>
+    </p>
+    <p class="field">
+      <label for="place">どこで <em>必須</em></label>
+      <input id="place" name="place" type="text" required maxlength="200" placeholder="例：四日市駅前、諏訪公園、霞ヶ浦緑地">
+    </p>
+    <fieldset class="field">
+      <legend>いつ <em>必須</em></legend>
+      <p class="when">
+        <input id="happened_on" name="happened_on" type="date">
+        <label class="chk"><input id="date_unknown" name="date_unknown" type="checkbox"> 日はわからない</label>
+      </p>
+    </fieldset>
+    <fieldset class="field">
+      <legend>掲載するときの名前の出し方 <em>必須</em></legend>
+      <label class="choice"><input type="radio" name="name_style" value="real" required> 実名</label>
+      <label class="choice"><input type="radio" name="name_style" value="nickname"> 通称・イニシャル</label>
+      <label class="choice"><input type="radio" name="name_style" value="anonymous"> 匿名</label>
+      <p class="field name-text" hidden>
+        <label for="name_text">載せる名前</label>
+        <input id="name_text" name="name_text" type="text" maxlength="80" placeholder="実名、または通称・イニシャル">
+      </p>
+    </fieldset>
+    <fieldset class="field">
+      <legend>連絡先 <span>任意</span></legend>
+      <p>事実の確認や、掲載の連絡が必要なときに使います。記事には出しません。</p>
+      <p class="when">
+        <select id="contact_type" name="contact_type">
+          <option value="">指定しない</option>
+          <option value="email">メール</option>
+          <option value="phone">電話</option>
+        </select>
+        <input id="contact" name="contact" type="text" maxlength="200" placeholder="メールアドレスまたは電話番号" disabled>
+      </p>
+      <label class="chk"><input id="notify_on_publish" name="notify_on_publish" type="checkbox" disabled> 記事になったら知らせてほしい</label>
+    </fieldset>
+    <div class="privacy">
+      <h2>個人情報の取り扱い</h2>
+      <p>運営はよんエク編集部です。いただいた情報は、記事の取材と確認のために使います。連絡先は返信や事実確認だけに使い、記事には出しません。お名前は、選んでいただいた出し方だけを使います。写真も、載せる前に確認します。不要になった情報は削除します。同意いただけない場合は送れません。</p>
+    </div>
+    <label class="chk agree"><input id="consent" name="consent" type="checkbox" required> 上記の取り扱いに同意する <em>必須</em></label>
+    <div class="turnstile">
+      <div class="cf-turnstile" data-sitekey="{E(sitekey)}" data-action="teikyo"></div>
+    </div>
+    <p class="actions"><button type="submit" class="send">送る</button></p>
+    <p class="status" id="teikyo-status" role="status" aria-live="polite"></p>
+  </form>
+</main>
+"""
+    s += footer(pre, [])
+    s += f"""<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+const API={json.dumps(api)};
+const form=document.getElementById('teikyo-form');
+const status=document.getElementById('teikyo-status');
+const date=document.getElementById('happened_on');
+const unk=document.getElementById('date_unknown');
+const nameBox=document.querySelector('.name-text');
+const nameInput=document.getElementById('name_text');
+const ctype=document.getElementById('contact_type');
+const contact=document.getElementById('contact');
+const notify=document.getElementById('notify_on_publish');
+unk.addEventListener('change',()=>{{date.disabled=unk.checked; if(unk.checked) date.value='';}});
+form.querySelectorAll('input[name=name_style]').forEach(r=>r.addEventListener('change',()=>{{
+  const style=form.querySelector('input[name=name_style]:checked');
+  const on=style && style.value!=='anonymous';
+  nameBox.hidden=!on; nameInput.required=!!on; if(!on) nameInput.value='';
+}}));
+ctype.addEventListener('change',()=>{{
+  const on=!!ctype.value; contact.disabled=!on; notify.disabled=!on;
+  contact.required=on; if(!on){{contact.value=''; notify.checked=false;}}
+  contact.type=ctype.value==='email'?'email':'text';
+}});
+const msgs={{validation:'記入漏れや、形式の合わない項目があります。',forbidden:'確認に失敗しました。もう一度送ってください。',rate_limit:'短時間に送りすぎです。しばらくしてからもう一度どうぞ。',server:'送信できませんでした。時間をおいてもう一度どうぞ。',network:'通信できませんでした。接続を確かめてもう一度どうぞ。'}};
+form.addEventListener('submit',async ev=>{{
+  ev.preventDefault();
+  status.textContent=''; status.className='status';
+  if(!unk.checked && !date.value){{status.textContent='「いつ」を入れるか、「日はわからない」にチェックしてください。';status.classList.add('err');return;}}
+  const btn=form.querySelector('.send');
+  btn.disabled=true; status.textContent='送っています…';
+  const token=window.turnstile?turnstile.getResponse():'';
+  const data={{
+    body:form.body.value,
+    place:form.place.value,
+    happened_on:date.disabled?'':date.value,
+    date_unknown:unk.checked,
+    name_style:(form.querySelector('input[name=name_style]:checked')||{{}}).value||'',
+    name_text:nameInput.value,
+    contact_type:ctype.value,
+    contact:contact.value,
+    notify_on_publish:notify.checked,
+    consent:form.consent.checked,
+    website:form.website.value,
+    'cf-turnstile-response':token
+  }};
+  try{{
+    const r=await fetch(API+'/teikyo',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(data)}});
+    const j=await r.json().catch(()=>({{}}));
+    if(j.ok){{
+      form.reset(); date.disabled=false; contact.disabled=true; notify.disabled=true; nameBox.hidden=true;
+      if(window.turnstile) turnstile.reset();
+      status.textContent='受け付けました。編集部が確認します。そのまま記事になることはありません。';
+      status.classList.add('ok');
+    }}else{{
+      status.textContent=msgs[j.error]||msgs.server; status.classList.add('err');
+      if(window.turnstile) turnstile.reset();
+    }}
+  }}catch(e){{
+    status.textContent=msgs.network; status.classList.add('err');
+    if(window.turnstile) turnstile.reset();
+  }}
+  btn.disabled=false;
+}});
+</script>
+</body>
+</html>
+"""
+    (OUT / "teikyo.html").write_text(s, encoding="utf-8")
+
+
 def build_redirects():  # 旧アドレス（a/<slug>.html など）→ 新アドレスへの転送ページ
     for a in arts:
         olds = a.get("redirect_from") or []
@@ -434,6 +576,7 @@ def main():
     shutil.copytree(ROOT / "assets", OUT / "assets")
     shutil.copytree(ROOT / "img", OUT / "img")
     build_home()
+    build_teikyo()
     for a in arts:
         build_article(a)
     build_redirects()

@@ -51,3 +51,8 @@ corrections:
 古いアドレスを `redirect_from: a/xxx.html` のように書くと、そのアドレスに新しいアドレスへの転送ページができる。
 
 ローカル確認: `python3 build.py` → `_site/index.html`
+
+## 市民からの情報提供
+
+公開ページ `/teikyo.html` から情報を受け付ける。送信先は Cloudflare Worker（`worker/`）と D1。送られた内容は自動では記事にならない。
+写真添付は未対応（R2 の有効化後に足す）。

@@ -1,0 +1,17 @@
+{
+  "name": "yonek-teikyo",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-24",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "yonek-teikyo",
+      "database_id": "c875a720-f552-4c28-b2e5-4ebd434c2170"
+    }
+  ]
+}

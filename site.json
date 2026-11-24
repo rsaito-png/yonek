@@ -9,5 +9,7 @@
     "港・コンビナート": "minato",
     "福祉・子育て": "fukushi",
     "くらし": "kurashi"
-  }
+  },
+  "teikyo_api": "https://yonek-teikyo.yokkaichi-express.workers.dev",
+  "turnstile_sitekey": "0x4AAAAAAGQJh5wiJRm1QLAC"
 }
