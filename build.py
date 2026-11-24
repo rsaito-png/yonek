@@ -409,7 +409,7 @@ def build_teikyo():
   <header class="teikyo-h">
     <p class="crumb"><a href="index.html">一面</a>　＞　情報を送る</p>
     <h1 class="h">情報を<span>送る</span></h1>
-    <p class="lead">工事の囲い、新しくできた店、地域のイベント。四日市で見たこと・聞いたことを教えてください。編集部が確認してから記事にします。送られた内容がそのまま載ることはありません。</p>
+    <p class="intro">工事の囲い、新しくできた店、地域のイベント。四日市で見たこと・聞いたことを教えてください。編集部が確認してから記事にします。送られた内容がそのまま載ることはありません。</p>
   </header>
   <form id="teikyo-form" novalidate>
     <div class="hp" aria-hidden="true">
@@ -459,7 +459,7 @@ def build_teikyo():
     </div>
     <label class="chk agree"><input id="consent" name="consent" type="checkbox" required> 上記の取り扱いに同意する <em>必須</em></label>
     <div class="turnstile">
-      <div class="cf-turnstile" data-sitekey="{E(sitekey)}" data-action="teikyo"></div>
+      <div class="cf-turnstile" data-sitekey="{E(sitekey)}" data-action="teikyo" data-size="flexible"></div>
     </div>
     <p class="actions"><button type="submit" class="send">送る</button></p>
     <p class="status" id="teikyo-status" role="status" aria-live="polite"></p>
@@ -479,7 +479,10 @@ const nameInput=document.getElementById('name_text');
 const ctype=document.getElementById('contact_type');
 const contact=document.getElementById('contact');
 const notify=document.getElementById('notify_on_publish');
-unk.addEventListener('change',()=>{{date.disabled=unk.checked; if(unk.checked) date.value='';}});
+function syncWhen(){{date.disabled=unk.checked; date.readOnly=unk.checked; if(unk.checked) date.value=''; date.setAttribute('aria-disabled', unk.checked?'true':'false');}}
+unk.addEventListener('change',syncWhen);
+unk.addEventListener('input',syncWhen);
+syncWhen();
 form.querySelectorAll('input[name=name_style]').forEach(r=>r.addEventListener('change',()=>{{
   const style=form.querySelector('input[name=name_style]:checked');
   const on=style && style.value!=='anonymous';
