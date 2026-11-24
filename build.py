@@ -889,8 +889,6 @@ def main():
     (OUT / "c").mkdir(parents=True)
     shutil.copytree(ROOT / "assets", OUT / "assets")
     shutil.copytree(ROOT / "img", OUT / "img")
-    sizes = build_webfonts(ROOT, OUT / "assets", arts, SITE)
-    print(f"fonts: dela {sizes['dela']}B ({sizes['head_chars']} chars)")
     og_font = ROOT / "fonts" / "DelaGothicOne-Regular.ttf"
     og_logo = ROOT / "assets" / "logo-mark-180.png"
     n_og = len(build_og_cards(arts, OUT, og_font, og_logo))
@@ -909,6 +907,14 @@ def main():
     build_robots()
     build_sitemap()
     build_feed()
+    # ページを書き出してから文字を集め、見出しフォントをサブセットする（小見出しの漏れ防止）
+    sizes = build_webfonts(ROOT, OUT, arts, SITE)
+    miss = sizes.get("missing_from_orig") or ""
+    print(
+        f"fonts: dela {sizes['dela']}B (subset {sizes['subset_chars']} chars "
+        f"/ site {sizes['site_chars']}, Dela要素 {sizes['dela_element_chars']})"
+        + (f"; Dela原本に無い字: {miss}" if miss else "")
+    )
     print(f"built {len(arts)} articles → {OUT}")
 
 main()
