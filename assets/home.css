@@ -277,6 +277,16 @@ footer .f-mark img{width:100%;height:100%}
 .teikyo .status.ok{background:var(--sumi);color:var(--ki);padding:10px 14px}
 .teikyo .status.err{background:var(--aka);color:#fff;padding:10px 14px}
 .teikyo .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+.teikyo input[type=file]{display:block;width:100%;font-family:var(--body);font-size:15px;font-weight:700;padding:10px 12px;border:3px solid var(--sumi);background:var(--hai);cursor:pointer}
+.teikyo .previews{list-style:none;margin:10px 0 0;padding:0}
+.teikyo .previews li{font-size:13px;font-weight:700;background:var(--hai);border:2px solid var(--sumi);padding:6px 10px;margin:0 0 6px}
+.teikyo .vprog{display:flex;align-items:center;gap:10px;margin:10px 0 0}
+.teikyo .vprog .bar{flex:1;height:16px;border:3px solid var(--sumi);background:#fff;display:block}
+.teikyo .vprog .bar i{display:block;height:100%;width:0;background:var(--aka);transition:width .15s}
+.teikyo .vprog .pct{font-weight:700;font-size:13px;min-width:4.5em}
+.teikyo fieldset.media>p{font-family:var(--body);font-weight:700;margin:0 0 10px;font-size:14px}
+
 @media (max-width:640px){
   .teikyo-h h1{font-size:40px}
   .teikyo form{padding:20px 14px 24px;box-shadow:5px 5px 0 var(--sumi)}

@@ -455,8 +455,20 @@ def build_teikyo():
     </fieldset>
     <div class="privacy">
       <h2>個人情報の取り扱い</h2>
-      <p>運営はよんエク編集部です。いただいた情報は、記事の取材と確認のために使います。連絡先は返信や事実確認だけに使い、記事には出しません。お名前は、選んでいただいた出し方だけを使います。写真も、載せる前に確認します。不要になった情報は削除します。同意いただけない場合は送れません。</p>
+      <p>運営はよんエク編集部です。いただいた情報は、記事の取材と確認のために使います。連絡先は返信や事実確認だけに使い、記事には出しません。お名前は、選んでいただいた出し方だけを使います。写真や動画も、載せる前に編集部が見てから使います。公開されるまで、送られたファイルは編集部だけが確認できます。不要になった情報は削除します。同意いただけない場合は送れません。</p>
     </div>
+    <fieldset class="field media">
+      <legend>写真 <span>任意・3枚まで、各5MB</span></legend>
+      <p>JPEG、PNG、WebP、HEIC。載せる前に編集部が見ます。</p>
+      <input id="photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple>
+      <ul class="previews" id="photo-list"></ul>
+    </fieldset>
+    <fieldset class="field media">
+      <legend>動画 <span>任意・1本、200MBまで</span></legend>
+      <p>MP4、MOV、WebM。スマホで撮った短い動画を想定しています。載せる前に編集部が見ます。</p>
+      <input id="video" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm">
+      <p class="vprog" id="video-progress" hidden><span class="bar"><i id="video-bar"></i></span><span class="pct" id="video-pct">0%</span></p>
+    </fieldset>
     <label class="chk agree"><input id="consent" name="consent" type="checkbox" required> 上記の取り扱いに同意する <em>必須</em></label>
     <div class="turnstile">
       <div class="cf-turnstile" data-sitekey="{E(sitekey)}" data-action="teikyo" data-size="flexible"></div>
@@ -493,7 +505,74 @@ ctype.addEventListener('change',()=>{{
   contact.required=on; if(!on){{contact.value=''; notify.checked=false;}}
   contact.type=ctype.value==='email'?'email':'text';
 }});
-const msgs={{validation:'記入漏れや、形式の合わない項目があります。',forbidden:'確認に失敗しました。もう一度送ってください。',rate_limit:'短時間に送りすぎです。しばらくしてからもう一度どうぞ。',server:'送信できませんでした。時間をおいてもう一度どうぞ。',network:'通信できませんでした。接続を確かめてもう一度どうぞ。'}};
+const PHOTO_MAX=3, PHOTO_BYTES=5*1024*1024, VIDEO_BYTES=200*1024*1024;
+const PHOTO_OK=/[.](jpe?g|png|webp|heic|heif)$/i;
+const VIDEO_OK=/[.](mp4|mov|webm)$/i;
+const photos=document.getElementById('photos');
+const video=document.getElementById('video');
+const photoList=document.getElementById('photo-list');
+const vprog=document.getElementById('video-progress');
+const vbar=document.getElementById('video-bar');
+const vpct=document.getElementById('video-pct');
+function showPhotos(){{
+  photoList.innerHTML='';
+  [...photos.files].forEach((f,i)=>{{
+    const li=document.createElement('li');
+    li.textContent=f.name+'（'+Math.ceil(f.size/1024)+'KB）';
+    photoList.appendChild(li);
+  }});
+}}
+photos.addEventListener('change',()=>{{
+  if(photos.files.length>PHOTO_MAX){{status.textContent='写真は3枚までです。';status.className='status err';photos.value='';photoList.innerHTML='';return;}}
+  for(const f of photos.files){{
+    if(f.size>PHOTO_BYTES){{status.textContent='写真は1枚5MBまでです。';status.className='status err';photos.value='';photoList.innerHTML='';return;}}
+    if(f.type && !f.type.startsWith('image/') && !PHOTO_OK.test(f.name)){{status.textContent='写真の形式をご確認ください。';status.className='status err';photos.value='';photoList.innerHTML='';return;}}
+  }}
+  showPhotos();
+}});
+video.addEventListener('change',()=>{{
+  const f=video.files[0];
+  if(!f){{vprog.hidden=true;return;}}
+  if(f.size>VIDEO_BYTES){{status.textContent='動画は200MBまでです。';status.className='status err';video.value='';vprog.hidden=true;return;}}
+  if(f.type && !f.type.startsWith('video/') && !VIDEO_OK.test(f.name)){{status.textContent='動画の形式をご確認ください。';status.className='status err';video.value='';return;}}
+  vprog.hidden=false;vbar.style.width='0%';vpct.textContent='準備完了';
+}});
+function setVideoProgress(p){{vprog.hidden=false;vbar.style.width=Math.round(p*100)+'%';vpct.textContent=Math.round(p*100)+'%';}}
+async function putFile(url, file, onProg){{
+  return await new Promise((resolve,reject)=>{{
+    const x=new XMLHttpRequest();
+    x.open('PUT', url);
+    x.setRequestHeader('Content-Type', file.type||'application/octet-stream');
+    x.upload.onprogress=e=>{{if(e.lengthComputable&&onProg) onProg(e.loaded/e.total);}};
+    x.onload=()=>{{try{{resolve(JSON.parse(x.responseText||'{{}}'));}}catch(err){{reject(err);}}}};
+    x.onerror=()=>reject(new Error('network'));
+    x.send(file);
+  }});
+}}
+async function uploadOne(session, meta, file, onProg){{
+  const PART=8*1024*1024;
+  if(file.size<=PART){{
+    const q=API+'/teikyo/upload?session='+encodeURIComponent(session)+'&file='+encodeURIComponent(meta.id);
+    const j=await putFile(q, file, onProg);
+    if(!j.ok) throw j;
+    if(onProg) onProg(1);
+    return;
+  }}
+  const ini=await (await fetch(API+'/teikyo/upload/init',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{session,file:meta.id}})}})).json();
+  if(!ini.ok) throw ini;
+  let sent=0, part=1;
+  for(let off=0; off<file.size; off+=PART, part++){{
+    const blob=file.slice(off, Math.min(file.size, off+PART));
+    const q=API+'/teikyo/upload/part?session='+encodeURIComponent(session)+'&file='+encodeURIComponent(meta.id)+'&part='+part;
+    const j=await putFile(q, blob, p=>{{if(onProg) onProg((sent+p*blob.size)/file.size);}});
+    if(!j.ok) throw j;
+    sent+=blob.size;
+    if(onProg) onProg(sent/file.size);
+  }}
+  const fin=await (await fetch(API+'/teikyo/upload/finish',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{session,file:meta.id}})}})).json();
+  if(!fin.ok) throw fin;
+}}
+const msgs={{validation:'記入漏れや、形式の合わない項目があります。',forbidden:'確認に失敗しました。もう一度送ってください。',rate_limit:'短時間に送りすぎです。しばらくしてからもう一度どうぞ。',too_large:'ファイルの容量が大きすぎます。',server:'送信できませんでした。時間をおいてもう一度どうぞ。',network:'通信できませんでした。接続を確かめてもう一度どうぞ。'}};
 form.addEventListener('submit',async ev=>{{
   ev.preventDefault();
   status.textContent=''; status.className='status';
@@ -501,6 +580,9 @@ form.addEventListener('submit',async ev=>{{
   const btn=form.querySelector('.send');
   btn.disabled=true; status.textContent='送っています…';
   const token=window.turnstile?turnstile.getResponse():'';
+  const fileMetas=[];
+  for(const f of photos.files) fileMetas.push({{kind:'photo',type:f.type||'image/jpeg',size:f.size,name:f.name,blob:f}});
+  if(video.files[0]) fileMetas.push({{kind:'video',type:video.files[0].type||'video/mp4',size:video.files[0].size,name:video.files[0].name,blob:video.files[0]}});
   const data={{
     body:form.body.value,
     place:form.place.value,
@@ -513,22 +595,34 @@ form.addEventListener('submit',async ev=>{{
     notify_on_publish:notify.checked,
     consent:form.consent.checked,
     website:form.website.value,
-    'cf-turnstile-response':token
+    'cf-turnstile-response':token,
+    files:fileMetas.map(f=>({{kind:f.kind,type:f.type,size:f.size,name:f.name}}))
   }};
   try{{
-    const r=await fetch(API+'/teikyo',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(data)}});
-    const j=await r.json().catch(()=>({{}}));
-    if(j.ok){{
-      form.reset(); date.disabled=false; contact.disabled=true; notify.disabled=true; nameBox.hidden=true;
-      if(window.turnstile) turnstile.reset();
-      status.textContent='受け付けました。編集部が確認します。そのまま記事になることはありません。';
-      status.classList.add('ok');
-    }}else{{
-      status.textContent=msgs[j.error]||msgs.server; status.classList.add('err');
-      if(window.turnstile) turnstile.reset();
+    const started=await (await fetch(API+'/teikyo/start',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify(data)}})).json();
+    if(!started.ok) throw started;
+    if(!started.done && started.session){{
+      const idMap={{}};
+      for(const m of (started.files||[])) idMap[m.kind+':'+m.size]=idMap[m.kind+':'+m.size]||[];
+      let pi=0, vi=0;
+      for(const m of started.files||[]){{
+        const blob=m.kind==='video'?video.files[0]:photos.files[pi++];
+        if(!blob) throw {{error:'validation'}};
+        status.textContent=m.kind==='video'?'動画を送っています…':'写真を送っています…';
+        await uploadOne(started.session, m, blob, m.kind==='video'?setVideoProgress:null);
+      }}
+      status.textContent='受け付けを確定しています…';
+      const done=await (await fetch(API+'/teikyo/complete',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{session:started.session}})}})).json();
+      if(!done.ok) throw done;
     }}
+    form.reset(); date.disabled=false; contact.disabled=true; notify.disabled=true; nameBox.hidden=true;
+    photoList.innerHTML=''; vprog.hidden=true; vbar.style.width='0%';
+    if(window.turnstile) turnstile.reset();
+    status.textContent='受け付けました。編集部が確認します。そのまま記事になることはありません。';
+    status.classList.add('ok');
   }}catch(e){{
-    status.textContent=msgs.network; status.classList.add('err');
+    const code=(e&&e.error)|| (e&&e.message==='network'?'network':'server');
+    status.textContent=msgs[code]||msgs.server; status.classList.add('err');
     if(window.turnstile) turnstile.reset();
   }}
   btn.disabled=false;

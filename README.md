@@ -54,5 +54,4 @@ corrections:
 
 ## 市民からの情報提供
 
-公開ページ `/teikyo.html` から情報を受け付ける。送信先は Cloudflare Worker（`worker/`）と D1。送られた内容は自動では記事にならない。
-写真添付は未対応（R2 の有効化後に足す）。
+公開ページ `/teikyo.html` から情報を受け付ける。送信先は Cloudflare Worker（`worker/`）と D1。写真は最大3枚（JPEG / PNG / WebP / HEIC、各5MB）、動画は1本（MP4 / MOV / WebM、200MBまで）。ファイルは非公開の R2 に保存し、公開用のアドレスは付けない。動画は Worker 経由の分割アップロード。送られた内容は自動では記事にならない。
