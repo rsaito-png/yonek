@@ -20,7 +20,7 @@ function cors(origin) {
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Yonek-Test",
+    "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -44,15 +44,6 @@ function validDate(s) {
 async function sha256(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function timingEqual(a, b) {
-  const aa = String(a || "");
-  const bb = String(b || "");
-  if (aa.length !== bb.length) return false;
-  let d = 0;
-  for (let i = 0; i < aa.length; i++) d |= aa.charCodeAt(i) ^ bb.charCodeAt(i);
-  return d === 0;
 }
 
 function extFor(type, name) {
@@ -166,10 +157,6 @@ async function verifyTurnstile(token, ip, env) {
   return !!(result && result.success && result.action === ACTION && HOSTS.has(result.hostname));
 }
 
-function isTestAuth(request, env) {
-  return !!(env.TEST_KEY && timingEqual(request.headers.get("X-Yonek-Test") || "", env.TEST_KEY));
-}
-
 function parseFields(data) {
   const body = clip(data.body, MAX.body);
   const place = clip(data.place, MAX.place);
@@ -240,28 +227,141 @@ async function insertTip(env, fields, nowIso, ipHash, isTest, status) {
   return id;
 }
 
-async function notify(env, ctx, id, nowIso, fields) {
-  if (!env.NOTIFY_WEBHOOK_URL) return;
-  const payload = {
-    source: "よんエク 情報提供",
-    id,
-    created_at: nowIso,
-    body: fields.body,
-    place: fields.place,
-    happened_on: fields.dateUnknown ? "日はわからない" : fields.happenedOn,
-    name_style: fields.nameStyle,
-    name_text: fields.nameText,
-    contact_type: fields.contactType || "",
-    contact: fields.contact || "",
-    notify_on_publish: !!fields.notify,
-  };
-  ctx.waitUntil(
-    fetch(env.NOTIFY_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch(() => {})
-  );
+const NOTIFY_FROM = "よんエク編集部 <onboarding@resend.dev>";
+const NOTIFY_TO = "rsaito@psr-seishinkai.org";
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
+}
+
+function formatJst(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso || "");
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(d) + "（日本時間）";
+}
+
+function nameStyleLabel(style, text) {
+  if (style === "real") return "実名" + (text ? "（" + text + "）" : "");
+  if (style === "nickname") return "通称・イニシャル" + (text ? "（" + text + "）" : "");
+  return "匿名";
+}
+
+function contactLabel(type, value) {
+  if (!type || !value) return "なし";
+  if (type === "email") return "あり（メール：" + value + "）";
+  if (type === "phone") return "あり（電話：" + value + "）";
+  return "あり（" + value + "）";
+}
+
+function attachmentLabel(list) {
+  const files = Array.isArray(list) ? list : [];
+  if (!files.length) return "なし";
+  const photos = files.filter((f) => f.kind === "photo").length;
+  const videos = files.filter((f) => f.kind === "video").length;
+  const parts = [];
+  if (photos) parts.push("写真" + photos + "点");
+  if (videos) parts.push("動画" + videos + "点");
+  const types = files.map((f) => f.content_type || f.kind).filter(Boolean).join("、");
+  return parts.join("、") + (types ? "（" + types + "）" : "");
+}
+
+async function notify(env, ctx, id, nowIso, fields, extras) {
+  extras = extras || {};
+  const attachments = extras.attachments || [];
+  const isTest = !!extras.isTest;
+  const when = fields.dateUnknown ? "日はわからない" : (fields.happenedOn || "");
+  const received = formatJst(nowIso);
+  const name = nameStyleLabel(fields.nameStyle, fields.nameText);
+  const contact = contactLabel(fields.contactType, fields.contact);
+  const attach = attachmentLabel(attachments);
+  const wantNotify = fields.notify ? "はい" : "いいえ";
+  const subject = isTest ? "よんエク情報提供が届きました【テスト】" : "よんエク情報提供が届きました";
+  const intro = "これは編集部向けの内部通知です。投稿がそのまま記事になることはありません。";
+  const testLine = isTest ? "【テスト投稿】記事にしないでください。" : "";
+  const lines = [
+    intro,
+    testLine,
+    "受付日時：" + received,
+    "受付番号：" + id,
+    "種別：市民からの情報提供" + (isTest ? "（テスト）" : ""),
+    "なにがあったか：",
+    fields.body || "",
+    "どこで：" + (fields.place || ""),
+    "いつ：" + when,
+    "掲載時の名前の出し方：" + name,
+    "連絡先：" + contact,
+    "記事になったら知らせてほしい：" + wantNotify,
+    "添付：" + attach,
+  ].filter((l) => l !== "");
+  const text = lines.join("\n");
+  const html = [
+    "<p>" + escapeHtml(intro) + "</p>",
+    testLine ? "<p><strong>" + escapeHtml(testLine) + "</strong></p>" : "",
+    "<table>",
+    "<tr><th>受付日時</th><td>" + escapeHtml(received) + "</td></tr>",
+    "<tr><th>受付番号</th><td>" + escapeHtml(id) + "</td></tr>",
+    "<tr><th>種別</th><td>市民からの情報提供" + (isTest ? "（テスト）" : "") + "</td></tr>",
+    "<tr><th>なにがあったか</th><td>" + escapeHtml(fields.body || "").replace(/\n/g, "<br>") + "</td></tr>",
+    "<tr><th>どこで</th><td>" + escapeHtml(fields.place || "") + "</td></tr>",
+    "<tr><th>いつ</th><td>" + escapeHtml(when) + "</td></tr>",
+    "<tr><th>掲載時の名前の出し方</th><td>" + escapeHtml(name) + "</td></tr>",
+    "<tr><th>連絡先</th><td>" + escapeHtml(contact) + "</td></tr>",
+    "<tr><th>記事になったら知らせてほしい</th><td>" + escapeHtml(wantNotify) + "</td></tr>",
+    "<tr><th>添付</th><td>" + escapeHtml(attach) + "</td></tr>",
+    "</table>",
+  ].join("");
+
+  const jobs = [];
+  if (env.NOTIFY_WEBHOOK_URL) {
+    jobs.push(
+      fetch(env.NOTIFY_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "よんエク 情報提供",
+          id,
+          created_at: nowIso,
+          is_test: isTest,
+        }),
+      }).catch(() => {})
+    );
+  }
+  if (env.RESEND_API_KEY) {
+    jobs.push((async () => {
+      try {
+        const r = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + env.RESEND_API_KEY,
+            "Content-Type": "application/json",
+            "Idempotency-Key": "yonek-teikyo-" + id,
+          },
+          body: JSON.stringify({
+            from: NOTIFY_FROM,
+            to: [NOTIFY_TO],
+            subject,
+            text,
+            html,
+          }),
+        });
+        if (!r.ok) console.log(JSON.stringify({ event: "notify_email_failed", status: r.status }));
+      } catch {
+        console.log(JSON.stringify({ event: "notify_email_failed" }));
+      }
+    })());
+  }
+  if (jobs.length) ctx.waitUntil(Promise.all(jobs));
 }
 
 async function loadSession(env, sessionId) {
@@ -279,11 +379,10 @@ async function saveSession(env, session) {
 }
 
 async function handleStart(request, env, ctx, origin) {
-  const test = isTestAuth(request, env);
   const data = await readJson(request);
   const ip = request.headers.get("CF-Connecting-IP") || "";
   const token = data["cf-turnstile-response"] || data.turnstile || "";
-  if (!test && !(await verifyTurnstile(token, ip, env))) {
+  if (!(await verifyTurnstile(token, ip, env))) {
     return json({ ok: false, error: "forbidden" }, 403, origin);
   }
   if (clip(data.website, 200)) {
@@ -301,10 +400,10 @@ async function handleStart(request, env, ctx, origin) {
     return json({ ok: false, error: "rate_limit" }, 429, origin);
   }
 
-  const isTest = test;
+  const isTest = false;
   if (filesIn.length === 0) {
     const id = await insertTip(env, fields, nowIso, ipHash, isTest, "new");
-    await notify(env, ctx, id, nowIso, fields);
+    await notify(env, ctx, id, nowIso, fields, { isTest, attachments: [] });
     return json({ ok: true, id, done: true }, 200, origin);
   }
 
@@ -456,7 +555,7 @@ async function handleComplete(request, env, ctx, origin) {
   }
   await env.DB.prepare("UPDATE tips SET status = 'new' WHERE id = ? AND status = 'pending'").bind(session.tip_id).run();
   const tip = await env.DB.prepare(
-    "SELECT id, created_at, body, place, happened_on, date_unknown, name_style, name_text, contact_type, contact, notify_on_publish FROM tips WHERE id = ?"
+    "SELECT id, created_at, body, place, happened_on, date_unknown, name_style, name_text, contact_type, contact, notify_on_publish, is_test FROM tips WHERE id = ?"
   ).bind(session.tip_id).first();
   if (tip) {
     await notify(env, ctx, tip.id, tip.created_at, {
@@ -469,6 +568,14 @@ async function handleComplete(request, env, ctx, origin) {
       contactType: tip.contact_type,
       contact: tip.contact,
       notify: tip.notify_on_publish,
+    }, {
+      isTest: !!tip.is_test,
+      attachments: session.files.map((f) => ({
+        kind: f.kind,
+        content_type: f.content_type,
+        filename: f.filename,
+        size: f.size,
+      })),
     });
   }
   await env.DB.prepare("DELETE FROM upload_sessions WHERE id = ?").bind(session.id).run();
@@ -485,7 +592,7 @@ export default {
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
       return json({ ok: true, service: "yonek-teikyo" }, 200, origin);
     }
-    if (origin && origin !== ALLOWED_ORIGIN && !isTestAuth(request, env)) {
+    if (origin && origin !== ALLOWED_ORIGIN) {
       return json({ ok: false, error: "forbidden" }, 403, origin);
     }
     try {
@@ -499,7 +606,7 @@ export default {
         // Re-wrap as start
         request = new Request(request.url, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Yonek-Test": request.headers.get("X-Yonek-Test") || "", "CF-Connecting-IP": request.headers.get("CF-Connecting-IP") || "" },
+          headers: { "Content-Type": "application/json", "CF-Connecting-IP": request.headers.get("CF-Connecting-IP") || "" },
           body: JSON.stringify(data),
         });
         return await handleStart(request, env, ctx, origin);
