@@ -122,25 +122,47 @@ def credits_footer(items):
             seen.add(a["image"]); out.append(f'{a.get("image_caption","")}：{c}')
     return "／".join(out)
 
+def page_lastmod(a):
+    dates = [a.get("date") or "", a.get("published") or ""]
+    for c in (a.get("corrections") or []):
+        m = re.match(r"^(\d{4}-\d{2}-\d{2})", str(c).strip())
+        if m:
+            dates.append(m.group(1))
+    return max(d for d in dates if d)
+
 def head(title, desc, pre, css, og_img=None, url=""):
     og = (f'<meta property="og:image" content="{E(SITE["base_url"])}assets/og-image.png">\n'
           '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
           f'<meta property="og:image:alt" content="よんエク（四日市エクスプレス）のロゴ">\n'
           f'<meta name="twitter:image" content="{E(SITE["base_url"])}assets/og-image.png">')
+    canon = SITE["base_url"] + url
+    ver = SITE.get("google_site_verification") or ""
+    ver_tag = f'<meta name="google-site-verification" content="{E(ver)}">\n' if ver else ""
+    mid = SITE.get("ga_measurement_id") or ""
+    ga = ""
+    if mid:
+        mid_e = E(mid)
+        ga = (
+            f'<script async src="https://www.googletagmanager.com/gtag/js?id={mid_e}"></script>\n'
+            f"<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}"
+            f"gtag('js',new Date());gtag('config','{mid_e}');</script>\n"
+        )
     return f'''<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{E(title)}</title>
+{ver_tag}{ga}<title>{E(title)}</title>
 <meta name="description" content="{E(desc)}">
 <meta property="og:title" content="{E(title)}">
 <meta property="og:description" content="{E(desc)}">
-<meta property="og:type" content="{"article" if url else "website"}">
-<meta property="og:url" content="{E(SITE["base_url"] + url)}">
+<meta property="og:type" content="{"article" if url and url[:4].isdigit() else "website"}">
+<meta property="og:url" content="{E(canon)}">
 <meta property="og:site_name" content="よんエク（Yokkaichi Express）">
 {og}
 <meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="{E(canon)}">
+<link rel="alternate" type="application/atom+xml" title="{E(SITE["name"])}" href="{E(SITE["base_url"])}feed.xml">
 <link rel="icon" href="{pre}assets/favicon.ico" sizes="any">
 <link rel="icon" href="{pre}assets/logo-mark.svg" type="image/svg+xml">
 <link rel="icon" href="{pre}assets/favicon-32.png" type="image/png" sizes="32x32">
@@ -657,7 +679,7 @@ def build_redirects():  # 旧アドレス（a/<slug>.html など）→ 新アド
 # ---------- 分野別 ----------
 def build_list(name, slug, items, easy=False):
     pre = "../"
-    s = head(f"{name}｜よんエク", f"よんエクの「{name}」の記事一覧", pre, "home.css")
+    s = head(f"{name}｜よんエク", f"よんエクの「{name}」の記事一覧", pre, "home.css", url=f"c/{slug}.html")
     s += mast(pre, "easy" if easy else name) + ticker(pre, by_date)
     s += f'<main class="wrap" id="main">\n  <h1 class="listh h">{E(name)}</h1>\n'
     if easy:
@@ -668,6 +690,69 @@ def build_list(name, slug, items, easy=False):
         s += '  <section class="row3 grid" aria-label="記事一覧">\n' + "\n".join(card(a, pre) for a in items) + "\n  </section>\n"
     s += "</main>\n" + footer(pre, items) + "</body>\n</html>\n"
     (OUT / "c" / f"{slug}.html").write_text(s, encoding="utf-8")
+
+
+def build_robots():
+    (OUT / "robots.txt").write_text(
+        "User-agent: *\nAllow: /\n\n"
+        f"Sitemap: {SITE['base_url']}sitemap.xml\n",
+        encoding="utf-8")
+
+def build_sitemap():
+    urls = []
+    home_mod = max((page_lastmod(a) for a in arts), default=NOW.strftime("%Y-%m-%d"))
+    urls.append((SITE["base_url"], home_mod))
+    urls.append((SITE["base_url"] + "teikyo.html", home_mod))
+    for c, items in cats.items():
+        urls.append((SITE["base_url"] + f"c/{cat_slug(c)}.html", max(page_lastmod(a) for a in items)))
+    easy = [a for a in by_date if a.get("easy_title")]
+    if easy:
+        urls.append((SITE["base_url"] + "c/easy.html", max(page_lastmod(a) for a in easy)))
+    for a in by_date:
+        urls.append((SITE["base_url"] + a["url"], page_lastmod(a)))
+    body = "\n".join(
+        f"  <url>\n    <loc>{E(loc)}</loc>\n    <lastmod>{E(mod)}</lastmod>\n  </url>"
+        for loc, mod in urls
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{body}\n</urlset>\n"
+    )
+    (OUT / "sitemap.xml").write_text(xml, encoding="utf-8")
+
+def build_feed():
+    updated = max((page_lastmod(a) for a in arts), default=NOW.strftime("%Y-%m-%d"))
+    entries = []
+    for a in by_date:
+        loc = SITE["base_url"] + a["url"]
+        pub = a.get("published") or a["date"]
+        upd = page_lastmod(a)
+        entries.append(
+            "  <entry>\n"
+            f"    <title>{E(a['title'])}</title>\n"
+            f'    <link href="{E(loc)}" rel="alternate" type="text/html"/>\n'
+            f"    <id>{E(loc)}</id>\n"
+            f"    <published>{pub}T00:00:00+09:00</published>\n"
+            f"    <updated>{upd}T00:00:00+09:00</updated>\n"
+            f'    <category term="{E(a["category"])}"/>\n'
+            f"    <summary>{E(a.get('sub') or '')}</summary>\n"
+            "  </entry>"
+        )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<feed xmlns="http://www.w3.org/2005/Atom">\n'
+        f'  <title>{E(SITE["name"])}（{E(SITE["name_en"])}）</title>\n'
+        f"  <subtitle>{E(SITE['description'])}</subtitle>\n"
+        f'  <link href="{E(SITE["base_url"])}feed.xml" rel="self" type="application/atom+xml"/>\n'
+        f'  <link href="{E(SITE["base_url"])}" rel="alternate" type="text/html"/>\n'
+        f"  <id>{E(SITE['base_url'])}</id>\n"
+        f"  <updated>{updated}T00:00:00+09:00</updated>\n"
+        f"  <author><name>{E(SITE['name'])}編集部</name></author>\n"
+        + "\n".join(entries)
+        + "\n</feed>\n"
+    )
+    (OUT / "feed.xml").write_text(xml, encoding="utf-8")
 
 def main():
     if OUT.exists():
@@ -686,6 +771,9 @@ def main():
     (OUT / ".nojekyll").write_text("")
     feed = [{"title": a["title"], "url": SITE["base_url"] + a["url"], "category": a["category"], "date": a["date"]} for a in by_date]
     (OUT / "articles.json").write_text(json.dumps(feed, ensure_ascii=False, indent=1), encoding="utf-8")
+    build_robots()
+    build_sitemap()
+    build_feed()
     print(f"built {len(arts)} articles → {OUT}")
 
 main()

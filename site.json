@@ -11,5 +11,6 @@
     "くらし": "kurashi"
   },
   "teikyo_api": "https://yonek-teikyo.yokkaichi-express.workers.dev",
-  "turnstile_sitekey": "0x4AAAAAAGQJh5wiJRm1QLAC"
+  "turnstile_sitekey": "0x4AAAAAAGQJh5wiJRm1QLAC",
+  "ga_measurement_id": "G-F9BXCYDQ93"
 }
