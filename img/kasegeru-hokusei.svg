@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice"><rect width="800" height="500" fill="#FFE600"/><g fill="#EE5500"><path d="M200 300 L1200 300 L1197 372Z"/><path d="M200 300 L1166 559 L1145 628Z"/><path d="M200 300 L1066 800 L1028 861Z"/><path d="M200 300 L907 1007 L854 1056Z"/><path d="M200 300 L700 1166 L636 1200Z"/><path d="M200 300 L459 1266 L389 1282Z"/><path d="M200 300 L200 1300 L128 1297Z"/><path d="M200 300 L-59 1266 L-128 1245Z"/><path d="M200 300 L-300 1166 L-361 1128Z"/><path d="M200 300 L-507 1007 L-556 954Z"/><path d="M200 300 L-666 800 L-700 736Z"/><path d="M200 300 L-766 559 L-782 489Z"/><path d="M200 300 L-800 300 L-797 228Z"/><path d="M200 300 L-766 41 L-745 -28Z"/><path d="M200 300 L-666 -200 L-628 -261Z"/><path d="M200 300 L-507 -407 L-454 -456Z"/><path d="M200 300 L-300 -566 L-236 -600Z"/><path d="M200 300 L-59 -666 L11 -682Z"/><path d="M200 300 L200 -700 L272 -697Z"/><path d="M200 300 L459 -666 L528 -645Z"/><path d="M200 300 L700 -566 L761 -528Z"/><path d="M200 300 L907 -407 L956 -354Z"/><path d="M200 300 L1066 -200 L1100 -136Z"/><path d="M200 300 L1166 41 L1182 111Z"/></g>
+<g transform="translate(500,130)">
+  <rect x="0" y="80" width="50" height="100" fill="#121212"/>
+  <rect x="70" y="40" width="50" height="140" fill="#121212"/>
+  <rect x="140" y="10" width="50" height="170" fill="#121212"/>
+</g>
+<rect x="36" y="110" width="250" height="62" fill="#121212"/><text x="50" y="158" font-family="Dela Gothic One, sans-serif" font-size="32" fill="#FFE600">議論</text>
+<text x="36" y="300" font-family="Dela Gothic One, sans-serif" font-size="52" fill="#121212">稼げる北勢</text>
+</svg>

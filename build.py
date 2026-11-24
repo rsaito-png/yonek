@@ -72,7 +72,7 @@ def cat_slug(c):
     return SITE["categories"].get(c) or "c" + hashlib.md5(c.encode()).hexdigest()[:6]
 
 arts = [parse(p) for p in sorted((ROOT / "articles").glob("*.md"))]
-arts.sort(key=lambda a: (a.get("date", ""), a.get("time", "")), reverse=True)
+arts.sort(key=lambda a: (a.get("date", ""), int(a.get("no") or 0), a.get("time") or ""), reverse=True)
 by_date = list(arts)
 front = sorted(arts, key=lambda a: -a["priority"])  # 安定ソート：priority 高い順、同点は新しい順
 cats = {}
@@ -220,7 +220,9 @@ def build_home():
     rest = [a for a in by_date if a is not lead]
     second = next((a for a in front[1:] if a["priority"] > 0), rest[0] if rest else None)
     others = [a for a in rest if a is not second]
-    row = others[:3]
+    # 新着リストとカードが同じ3本で重ならないよう、カードはまだ載せていない記事から取る
+    already = {id(a) for a in [lead, second] + by_date[:5] if a}
+    row = [a for a in others if id(a) not in already][:3]
     L = max(len(lead["l1"]), len(lead["l2"]))
     tsize = min(104, int(590 / max(L, 1)))
     msize = min(52, int(268 / max(L, 1)))
