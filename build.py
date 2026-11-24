@@ -376,8 +376,9 @@ def build_article(a):
         <ol>{"".join(f'<li><a href="{pre}{x["url"]}">{E(x["title"])}</a></li>' for x in by_date[:5])}</ol>
       </div>
       <div class="mini">
-        <b>よんエクの<br>約束</b>
-        <p>確かめられた数字と、本人が話したことだけを書きます。盛りません。</p>
+        <b>情報を送る</b>
+        <p>まちの出来事、写真や動画で教えてください</p>
+        <a href="{pre}teikyo.html">情報を送る</a>
       </div>
     </div>
   </aside>

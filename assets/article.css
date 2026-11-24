@@ -198,7 +198,7 @@ svg[role=img]{display:block;width:100%;height:100%}
 .src li small{font-weight:400;color:#555;word-break:break-all}
 .hero.svg{background:var(--ki)}
 .relg .im svg{width:100%;height:100%}
-.mini p{margin-bottom:0}
+.mini a:hover{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--sumi)}
 .ahead .tate{white-space:nowrap}
 
 footer .f-mark{display:block;width:88px;height:88px;align-self:start;border:3px solid #fff;box-shadow:5px 5px 0 var(--aka)}
