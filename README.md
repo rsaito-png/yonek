@@ -50,7 +50,7 @@ corrections:
 ## アドレスを変えたとき
 古いアドレスを `redirect_from: a/xxx.html` のように書くと、そのアドレスに新しいアドレスへの転送ページができる。
 
-ローカル確認: `python3 build.py` → `_site/index.html`
+ローカル確認: `python3 -m pip install -r requirements.txt` のあと `python3 build.py` → `_site/index.html`。見出しフォントのサブセットと記事ごとのOGP画像もここで作る。
 
 ## 市民からの情報提供
 

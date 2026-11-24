@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""よんエク 静的サイト生成。articles/*.md → _site/ （標準ライブラリのみ）"""
+"""よんエク 静的サイト生成。articles/*.md → _site/
+フォントのサブセットとOGP画像に fonttools / pillow を使う（requirements.txt）。
+"""
 import hashlib, json, re, html, shutil, datetime, urllib.parse
 from pathlib import Path
 
@@ -130,11 +132,110 @@ def page_lastmod(a):
             dates.append(m.group(1))
     return max(d for d in dates if d)
 
-def head(title, desc, pre, css, og_img=None, url=""):
-    og = (f'<meta property="og:image" content="{E(SITE["base_url"])}assets/og-image.png">\n'
-          '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
-          f'<meta property="og:image:alt" content="よんエク（四日市エクスプレス）のロゴ">\n'
-          f'<meta name="twitter:image" content="{E(SITE["base_url"])}assets/og-image.png">')
+
+def iso_dt(d):
+    if not d:
+        return ""
+    d = str(d).strip()
+    return d if "T" in d else f"{d}T00:00:00+09:00"
+
+def h1_text(a):
+    return f'{a["l1"]} {a["l2"]}'.strip() if a.get("l2") else a.get("l1") or a.get("title") or ""
+
+def page_title(a):
+    """画面のH1を先頭に含む title。一覧用の a['title'] は変えない。"""
+    h, tlt = h1_text(a), (a.get("title") or "").strip()
+    compact = lambda s: s.replace(" ", "").replace("　", "")
+    if not h:
+        return f"{tlt}｜よんエク"
+    if compact(h) == compact(tlt) or compact(tlt).startswith(compact(h)):
+        return f"{tlt}｜よんエク"
+    return f"{h}｜{tlt}｜よんエク"
+
+def ld_script(obj):
+    raw = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+    return f'<script type="application/ld+json">{raw}</script>\n'
+
+def org_ld():
+    logo = SITE["base_url"] + "assets/logo-mark-512.png"
+    return {
+        "@type": "Organization",
+        "@id": SITE["base_url"] + "#organization",
+        "name": "よんエク（Yokkaichi Express）",
+        "alternateName": ["よんエク", "よんエク編集部", SITE["name_en"]],
+        "url": SITE["base_url"],
+        "logo": {"@type": "ImageObject", "url": logo, "width": 512, "height": 512},
+    }
+
+def website_ld():
+    return {
+        "@type": "WebSite",
+        "@id": SITE["base_url"] + "#website",
+        "name": SITE["name"],
+        "alternateName": SITE["name_en"],
+        "url": SITE["base_url"],
+        "description": SITE["description"],
+        "inLanguage": "ja",
+        "publisher": {"@id": SITE["base_url"] + "#organization"},
+    }
+
+def crumbs_ld(items):
+    els = []
+    for i, (name, url) in enumerate(items, 1):
+        els.append({"@type": "ListItem", "position": i, "name": name, "item": url})
+    return {"@type": "BreadcrumbList", "itemListElement": els}
+
+def newsarticle_ld(a, image_url):
+    pub = iso_dt(a.get("published") or a["date"])
+    mod = iso_dt(page_lastmod(a))
+    page = SITE["base_url"] + a["url"]
+    return {
+        "@type": "NewsArticle",
+        "headline": h1_text(a),
+        "description": a.get("sub") or a.get("title") or "",
+        "datePublished": pub,
+        "dateModified": mod or pub,
+        "inLanguage": "ja",
+        "author": {"@type": "Organization", "name": "よんエク編集部", "url": SITE["base_url"]},
+        "publisher": {"@id": SITE["base_url"] + "#organization"},
+        "image": [image_url],
+        "mainEntityOfPage": {"@type": "WebPage", "@id": page},
+    }
+
+def related_articles(a, n=3):
+    rel = [x for x in cats.get(a["category"], []) if x is not a]
+    if len(rel) < n:
+        have = {id(x) for x in rel}
+        have.add(id(a))
+        for x in by_date:
+            if id(x) not in have:
+                rel.append(x)
+                have.add(id(x))
+            if len(rel) >= n:
+                break
+    return rel[:n]
+
+def og_url(path="assets/og-image.png"):
+    return SITE["base_url"] + path
+
+def head(title, desc, pre, css, og_img=None, url="", og_alt=None, json_ld=None, published=None, modified=None):
+    img = og_img or (SITE["base_url"] + "assets/og-image.png")
+    if img and not img.startswith("http"):
+        img = SITE["base_url"] + img
+    alt = og_alt or "よんエク（四日市エクスプレス）のロゴ"
+    og = (
+        f'<meta property="og:image" content="{E(img)}">\n'
+        '<meta property="og:image:width" content="1200">\n'
+        '<meta property="og:image:height" content="630">\n'
+        f'<meta property="og:image:alt" content="{E(alt)}">\n'
+        f'<meta name="twitter:image" content="{E(img)}">'
+    )
+    times = ""
+    if published:
+        times += f'<meta property="article:published_time" content="{E(iso_dt(published))}">\n'
+        times += f'<meta property="og:article:published_time" content="{E(iso_dt(published))}">\n'
+    if modified:
+        times += f'<meta property="article:modified_time" content="{E(iso_dt(modified))}">\n'
     canon = SITE["base_url"] + url
     ver = SITE.get("google_site_verification") or ""
     ver_tag = f'<meta name="google-site-verification" content="{E(ver)}">\n' if ver else ""
@@ -147,6 +248,10 @@ def head(title, desc, pre, css, og_img=None, url=""):
             f"<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}"
             f"gtag('js',new Date());gtag('config','{mid_e}');</script>\n"
         )
+    ld = ""
+    if json_ld:
+        ld = ld_script(json_ld)
+    is_article = bool(url and url[:4].isdigit())
     return f'''<!doctype html>
 <html lang="ja">
 <head>
@@ -156,23 +261,25 @@ def head(title, desc, pre, css, og_img=None, url=""):
 <meta name="description" content="{E(desc)}">
 <meta property="og:title" content="{E(title)}">
 <meta property="og:description" content="{E(desc)}">
-<meta property="og:type" content="{"article" if url and url[:4].isdigit() else "website"}">
+<meta property="og:type" content="{"article" if is_article else "website"}">
 <meta property="og:url" content="{E(canon)}">
 <meta property="og:site_name" content="よんエク（Yokkaichi Express）">
+<meta property="og:locale" content="ja_JP">
 {og}
 <meta name="twitter:card" content="summary_large_image">
-<link rel="canonical" href="{E(canon)}">
+<meta name="twitter:title" content="{E(title)}">
+<meta name="twitter:description" content="{E(desc)}">
+{times}<link rel="canonical" href="{E(canon)}">
 <link rel="alternate" type="application/atom+xml" title="{E(SITE["name"])}" href="{E(SITE["base_url"])}feed.xml">
 <link rel="icon" href="{pre}assets/favicon.ico" sizes="any">
 <link rel="icon" href="{pre}assets/logo-mark.svg" type="image/svg+xml">
 <link rel="icon" href="{pre}assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="{pre}assets/logo-mark-180.png">
 <meta name="theme-color" content="#EE5500">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preload" href="{pre}assets/fonts/dela-gothic-one.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{pre}assets/fonts.css">
 <link rel="stylesheet" href="{pre}assets/{css}">
-</head>
+{ld}</head>
 <body>
 <a class="skip" href="#main">本文へ</a>
 <div class="topbar"><div class="wrap">
@@ -252,7 +359,7 @@ def build_home():
     ssize = min(58, int(330 / max(L2, 1)))
     smsize = min(44, int(318 / max(L2, 1)))
     s = head(f'{SITE["name"]}｜{SITE["name_en"]}　四日市のローカルニュース', SITE["description"], pre, "home.css",
-             og_img="kombinat.jpg")
+             url="", json_ld={"@context": "https://schema.org", "@graph": [org_ld(), website_ld()]})
     s += mast(pre, "top") + ticker(pre, by_date)
     s += f'''<main class="wrap" id="main">
   <section class="front{"" if second else " solo"}">
@@ -341,10 +448,21 @@ def build_article(a):
     link = SITE["base_url"] + a["url"]
     enc = urllib.parse.quote
     others = [x for x in by_date if x is not a]
-    s = head(f'{a["title"]}｜よんエク', a.get("sub", ""), pre, "article.css",
-             og_img=a["image"] if a.get("image", "").endswith(".jpg") else None, url=a["url"])
-    s += mast(pre, a["category"]) + ticker(pre, others or by_date)
+    og_path = og_rel(a["url"])
+    og_abs = SITE["base_url"] + og_path
     pub = a.get("published", a["date"])
+    mod = page_lastmod(a)
+    title = page_title(a)
+    crumbs = crumbs_ld([
+        ("一面", SITE["base_url"]),
+        (a["category"], SITE["base_url"] + f"c/{cat_slug(a['category'])}.html"),
+        (h1_text(a), SITE["base_url"] + a["url"]),
+    ])
+    s = head(title, a.get("sub", ""), pre, "article.css",
+             og_img=og_abs, og_alt=h1_text(a) + "｜よんエク", url=a["url"],
+             json_ld={"@context": "https://schema.org", "@graph": [org_ld(), newsarticle_ld(a, og_abs), crumbs]},
+             published=pub, modified=mod)
+    s += mast(pre, a["category"]) + ticker(pre, others or by_date)
     note = ""
     easy = ""
     if a.get("easy"):
@@ -354,7 +472,7 @@ def build_article(a):
       <p>ふりがな付きの短い文で、この記事のポイントを読めます。</p>
     </div>
     <div class="easybox" id="easybox" lang="ja">{lines}</div>'''
-    rel = others[:3]
+    rel = related_articles(a, 3)
     rel_html = ""
     if rel:
         rel_html = '<section class="wrap rel" aria-labelledby="rel-h">\n  <h2 class="h" id="rel-h">あわせて読みたい</h2>\n  <div class="relg">' + "".join(
@@ -428,7 +546,11 @@ def build_teikyo():
     api = SITE.get("teikyo_api", "")
     sitekey = SITE.get("turnstile_sitekey", "")
     desc = "四日市で見たこと、聞いたことを、よんエク編集部に送れます。送られた内容がそのまま記事になることはありません。"
-    s = head("情報を送る｜よんエク", desc, pre, "home.css", url="teikyo.html")
+    s = head("情報を送る｜よんエク", desc, pre, "home.css", url="teikyo.html",
+             json_ld={"@context": "https://schema.org", "@graph": [
+                 org_ld(),
+                 crumbs_ld([("一面", SITE["base_url"]), ("情報を送る", SITE["base_url"] + "teikyo.html")]),
+             ]})
     s += mast(pre, "teikyo") + ticker(pre, by_date)
     s += f"""<main class="wrap teikyo" id="main">
   <header class="teikyo-h">
@@ -679,7 +801,11 @@ def build_redirects():  # 旧アドレス（a/<slug>.html など）→ 新アド
 # ---------- 分野別 ----------
 def build_list(name, slug, items, easy=False):
     pre = "../"
-    s = head(f"{name}｜よんエク", f"よんエクの「{name}」の記事一覧", pre, "home.css", url=f"c/{slug}.html")
+    s = head(f"{name}｜よんエク", f"よんエクの「{name}」の記事一覧", pre, "home.css", url=f"c/{slug}.html",
+             json_ld={"@context": "https://schema.org", "@graph": [
+                 org_ld(),
+                 crumbs_ld([("一面", SITE["base_url"]), (name, SITE["base_url"] + f"c/{slug}.html")]),
+             ]})
     s += mast(pre, "easy" if easy else name) + ticker(pre, by_date)
     s += f'<main class="wrap" id="main">\n  <h1 class="listh h">{E(name)}</h1>\n'
     if easy:
@@ -754,12 +880,21 @@ def build_feed():
     )
     (OUT / "feed.xml").write_text(xml, encoding="utf-8")
 
+from tools.ogcard import og_rel, build_og_cards
+from tools.webfonts import build_webfonts
+
 def main():
     if OUT.exists():
         shutil.rmtree(OUT)
     (OUT / "c").mkdir(parents=True)
     shutil.copytree(ROOT / "assets", OUT / "assets")
     shutil.copytree(ROOT / "img", OUT / "img")
+    sizes = build_webfonts(ROOT, OUT / "assets", arts, SITE)
+    print(f"fonts: dela {sizes['dela']}B ({sizes['head_chars']} chars)")
+    og_font = ROOT / "fonts" / "DelaGothicOne-Regular.ttf"
+    og_logo = ROOT / "assets" / "logo-mark-180.png"
+    n_og = len(build_og_cards(arts, OUT, og_font, og_logo))
+    print(f"og cards: {n_og}")
     build_home()
     build_teikyo()
     for a in arts:

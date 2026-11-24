@@ -7,7 +7,7 @@
   --hai:#E9E9E6;      /* 紙面グレー（冷たい新聞灰） */
   --ai:#0B3D91;       /* 藍：やさしい日本語の面だけで使う */
   --head:"Dela Gothic One",sans-serif;
-  --body:"BIZ UDPGothic",sans-serif;
+  --body:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","YuGothic",Meiryo,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
