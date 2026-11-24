@@ -1,5 +1,6 @@
 ---
-slug: miyazuma-camp
+no: 1
+redirect_from: a/miyazuma-camp.html
 title: 宮妻峡にオートキャンプ場 諏訪公園・鵜の森公園も再整備へ
 h1: 宮妻峡に|オートキャンプ場
 band: 朗報

@@ -1,5 +1,6 @@
 ---
-slug: godzilla-perovskite
+no: 1
+redirect_from: a/godzilla-perovskite.html
 title: 四日市港に巨大ゴジラ!? 曲がる次世代太陽電池で壁面に描く案
 h1: 四日市港に|巨大ゴジラ!?
 band: 仰天提案

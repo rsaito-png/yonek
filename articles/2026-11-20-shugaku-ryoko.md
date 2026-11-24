@@ -1,5 +1,6 @@
 ---
-slug: shugaku-ryoko
+no: 2
+redirect_from: a/shugaku-ryoko.html
 title: 修学旅行は四日市へ!? 京都・奈良に代わる「第2の聖地」案
 h1: 修学旅行は|四日市へ!?
 band: 提案

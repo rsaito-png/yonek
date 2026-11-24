@@ -30,6 +30,7 @@ def parse(path):
         meta[k] = v if v else []
     meta["body"] = m.group(2).strip()
     meta.setdefault("slug", path.stem)
+    meta["_file"] = path.name
     meta["priority"] = int(meta.get("priority") or 0)
     for req in ("title", "h1", "category", "date"):
         if not meta.get(req):
@@ -77,9 +78,27 @@ front = sorted(arts, key=lambda a: -a["priority"])  # 安定ソート：priority
 cats = {}
 for a in by_date:
     cats.setdefault(a["category"], []).append(a)
+# 記事のURL：/YYYY/MM/DD/NN.html（date ＋ その日の通し番号 no）
+# no は一度決めたら変えない。no がない記事は、その日の空いている番号をファイル名順に割り当てる
+#（既存の記事の番号はずれない。確定させるため、公開時に no を書き込んでおくこと）
+_used = {}
+for a in arts:
+    if a.get("no"):
+        k = (a["date"], int(a["no"]))
+        if k in _used:
+            raise SystemExit(f"{a['_file']} と {_used[k]}: date {a['date']} の no {a['no']} が重複しています")
+        _used[k] = a["_file"]
+for a in sorted(arts, key=lambda x: x["_file"]):
+    if not a.get("no"):
+        n = 1
+        while (a["date"], n) in _used:
+            n += 1
+        a["no"] = n; _used[(a["date"], n)] = a["_file"]
+        print(f"注意: {a['_file']} に no がないので {n} を割り当てました（ファイルに no: {n} を書いて固定してください）")
 for a in arts:
     a["l1"], _, a["l2"] = a["h1"].partition("|")
-    a["url"] = f"a/{a['slug']}.html"
+    y, mo, d = a["date"].split("-")
+    a["url"] = f"{y}/{mo}/{d}/{int(a['no']):02d}.html"
 
 # ---------- 部品 ----------
 def img_html(a, pre, cls=""):
@@ -291,7 +310,7 @@ def corrections_html(a):
 
 # ---------- 記事 ----------
 def build_article(a):
-    pre = "../"
+    pre = "../../../"
     link = SITE["base_url"] + a["url"]
     enc = urllib.parse.quote
     others = [x for x in by_date if x is not a]
@@ -373,7 +392,25 @@ document.querySelectorAll('.copy').forEach(c=>c.addEventListener('click',()=>{na
 </body>
 </html>
 '''
+    (OUT / a["url"]).parent.mkdir(parents=True, exist_ok=True)
     (OUT / a["url"]).write_text(s, encoding="utf-8")
+
+def build_redirects():  # 旧アドレス（a/<slug>.html など）→ 新アドレスへの転送ページ
+    for a in arts:
+        olds = a.get("redirect_from") or []
+        for old in ([olds] if isinstance(olds, str) else olds):
+            new = SITE["base_url"] + a["url"]
+            p = OUT / old
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(f'''<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>{E(a["title"])}｜よんエク</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="{E(new)}">
+<meta http-equiv="refresh" content="0; url={E(new)}">
+<script>location.replace({json.dumps(new)}+location.hash)</script>
+</head><body><p>この記事は <a href="{E(new)}">{E(new)}</a> に移りました。</p></body></html>
+''', encoding="utf-8")
 
 # ---------- 分野別 ----------
 def build_list(name, slug, items, easy=False):
@@ -393,12 +430,13 @@ def build_list(name, slug, items, easy=False):
 def main():
     if OUT.exists():
         shutil.rmtree(OUT)
-    (OUT / "a").mkdir(parents=True); (OUT / "c").mkdir()
+    (OUT / "c").mkdir(parents=True)
     shutil.copytree(ROOT / "assets", OUT / "assets")
     shutil.copytree(ROOT / "img", OUT / "img")
     build_home()
     for a in arts:
         build_article(a)
+    build_redirects()
     for c, items in cats.items():
         build_list(c, cat_slug(c), items)
     build_list("やさしい日本語", "easy", [a for a in by_date if a.get("easy_title")], easy=True)

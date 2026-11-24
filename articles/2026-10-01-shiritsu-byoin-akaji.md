@@ -1,5 +1,6 @@
 ---
-slug: shiritsu-byoin-akaji
+no: 1
+redirect_from: a/shiritsu-byoin-akaji.html
 title: 市立四日市病院、赤字26億円超 内部留保は約7億円に 改善策11項目で年6億円規模
 h1: 市立病院|赤字26億円超
 band: 衝撃

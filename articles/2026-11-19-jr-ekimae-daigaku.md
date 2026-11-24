@@ -1,5 +1,6 @@
 ---
-slug: jr-ekimae-daigaku
+no: 1
+redirect_from: a/jr-ekimae-daigaku.html
 title: JR駅前大学、緑のキャンパス案が初公開 開学は令和14年4月
 h1: JR駅前大学|緑のキャンパス案
 band: 最新
